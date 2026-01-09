@@ -50,13 +50,9 @@ def apply_ghanaian_theme():
     """
     st.markdown("""
         <style>
-        /* --- 1. FORCE LIGHT THEME VARIABLES (MISSING IN YOUR CODE) --- */
+        /* --- 1. FORCE BROWSER TO LIGHT MODE --- */
         :root {
-            --primary-color: #CE1126;
-            --background-color: #FFFFFF;
-            --secondary-background-color: #F0F2F6;
-            --text-color: #222222;
-            --font: sans-serif;
+            color-scheme: light;
         }
 
         /* --- 2. FORCE MAIN BACKGROUND TO WHITE --- */
@@ -110,7 +106,7 @@ def apply_ghanaian_theme():
             border-right: 1px solid #ddd;
         }
 
-        /* FORCE DARK TEXT IN SIDEBAR - ROBUST SELECTORS */
+        /* FORCE DARK TEXT IN SIDEBAR */
         section[data-testid="stSidebar"] .stMarkdown p,
         section[data-testid="stSidebar"] .stMarkdown h1,
         section[data-testid="stSidebar"] .stMarkdown h2,
@@ -119,6 +115,39 @@ def apply_ghanaian_theme():
         section[data-testid="stSidebar"] span,
         section[data-testid="stSidebar"] div {
             color: #222222 !important;
+        }
+
+        /* --- FIX: FORCE WIDGETS (SELECTBOX, INPUTS) TO WHITE --- */
+        div[data-baseweb="select"] > div,
+        div[data-baseweb="base-input"] {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            border: 1px solid #cccccc !important;
+        }
+        /* Fix text inside dropdowns */
+        div[data-baseweb="select"] span {
+            color: #000000 !important;
+        }
+        /* Fix dropdown icons */
+        div[data-baseweb="select"] svg {
+            fill: #000000 !important;
+        }
+        
+        /* --- FIX: EXPANDER HEADERS --- */
+        .streamlit-expanderHeader {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+        }
+        .streamlit-expanderHeader p {
+            color: #000000 !important;
+            font-weight: 600;
+        }
+        /* Fix Expander Content Background */
+        div[data-testid="stExpanderDetails"] {
+            background-color: #f9f9f9 !important;
+            color: #000000 !important;
         }
 
         /* FILE UPLOADER DROPZONE */
@@ -137,7 +166,7 @@ def apply_ghanaian_theme():
             border: 1px solid #cccccc !important;
         }
 
-        /* UPLOADED FILE LIST ITEMS - FIXED VISIBILITY */
+        /* UPLOADED FILE LIST ITEMS */
         [data-testid="stFileUploader"] section[data-testid="stFileUploaderFileName"] {
              color: #000000 !important;
         }
@@ -148,12 +177,6 @@ def apply_ghanaian_theme():
         div[data-testid="stFileUploader"] div[role="listitem"] div {
             color: #000000 !important;
             font-weight: 600 !important;
-        }
-        
-        /* EXPANDER TEXT */
-        .streamlit-expanderHeader {
-            color: #222222 !important;
-            font-weight: 600;
         }
 
         /* TYPOGRAPHY */
