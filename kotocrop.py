@@ -42,41 +42,30 @@ st.set_page_config(
 )
 
 # =============================================================================
-# 2. GHANAIAN THEME & BRANDING (FIXED CSS)
+# 2. GHANAIAN THEME & BRANDING (ADAPTIVE CSS)
 # =============================================================================
 def apply_ghanaian_theme():
     """
-    Injects custom CSS to style the app with Ghanaian colors.
+    Injects custom CSS to style the app with Ghanaian colors while respecting
+    the user's Light/Dark mode settings.
     """
     st.markdown("""
         <style>
-        /* --- 1. FORCE BROWSER TO LIGHT MODE --- */
-        :root {
-            color-scheme: light;
-        }
-
-        /* --- 2. FORCE MAIN BACKGROUND TO WHITE --- */
-        .stApp {
-            background-color: white;
-            color: #222222;
-        }
-
-        /* --- 3. GHANAIAN PALETTE --- */
+        /* --- 1. GHANAIAN PALETTE --- */
         :root {
             --gh-red: #CE1126;
             --gh-gold: #FCD116;
             --gh-green: #006B3F;
             --gh-black: #000000;
-            --bg-light: #F9F9F9;
         }
-        
-        /* HEADER BORDER */
+
+        /* --- 2. ADAPTIVE HEADER --- */
         header[data-testid="stHeader"] {
             border-bottom: 5px solid var(--gh-gold);
-            background-color: white !important;
+            /* Background adapts automatically to theme */
         }
         
-        /* ACCENT LINES */
+        /* --- 3. ACCENT LINES --- */
         .decoration-line {
             height: 4px;
             width: 100%;
@@ -85,12 +74,12 @@ def apply_ghanaian_theme():
             border-radius: 2px;
         }
 
-        /* BUTTONS */
+        /* --- 4. BUTTONS (ALWAYS BLACK BG, WHITE TEXT) --- */
         div.stButton > button {
             background-color: var(--gh-black);
             color: white !important;
             border-radius: 6px;
-            border: none;
+            border: 1px solid #333;
             padding: 0.5rem 1rem;
             font-weight: 600;
         }
@@ -100,89 +89,35 @@ def apply_ghanaian_theme():
             border: 1px solid var(--gh-gold);
         }
 
-        /* SIDEBAR CONTAINER */
+        /* --- 5. SIDEBAR ADAPTATION --- */
         section[data-testid="stSidebar"] {
-            background-color: #f0f2f6 !important;
-            border-right: 1px solid #ddd;
-        }
-
-        /* FORCE DARK TEXT IN SIDEBAR */
-        section[data-testid="stSidebar"] .stMarkdown p,
-        section[data-testid="stSidebar"] .stMarkdown h1,
-        section[data-testid="stSidebar"] .stMarkdown h2,
-        section[data-testid="stSidebar"] .stMarkdown h3,
-        section[data-testid="stSidebar"] label,
-        section[data-testid="stSidebar"] span,
-        section[data-testid="stSidebar"] div {
-            color: #222222 !important;
-        }
-
-        /* --- FIX: FORCE WIDGETS (SELECTBOX, INPUTS) TO WHITE --- */
-        div[data-baseweb="select"] > div,
-        div[data-baseweb="base-input"] {
-            background-color: #ffffff !important;
-            color: #000000 !important;
-            border: 1px solid #cccccc !important;
-        }
-        /* Fix text inside dropdowns */
-        div[data-baseweb="select"] span {
-            color: #000000 !important;
-        }
-        /* Fix dropdown icons */
-        div[data-baseweb="select"] svg {
-            fill: #000000 !important;
+            border-right: 1px solid var(--gh-gold);
         }
         
-        /* --- FIX: EXPANDER HEADERS --- */
-        .streamlit-expanderHeader {
-            background-color: #ffffff !important;
-            color: #000000 !important;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
-        }
-        .streamlit-expanderHeader p {
-            color: #000000 !important;
-            font-weight: 600;
-        }
-        /* Fix Expander Content Background */
-        div[data-testid="stExpanderDetails"] {
-            background-color: #f9f9f9 !important;
-            color: #000000 !important;
+        /* Ensure sidebar text uses the theme's text color (var(--text-color)) 
+           instead of forcing black, so it works in Dark Mode too. */
+        section[data-testid="stSidebar"] .stMarkdown h1,
+        section[data-testid="stSidebar"] .stMarkdown h2,
+        section[data-testid="stSidebar"] .stMarkdown h3 {
+            color: var(--text-color) !important;
         }
 
-        /* FILE UPLOADER DROPZONE */
+        /* --- 6. FILE UPLOADER (ADAPTIVE) --- */
         [data-testid="stFileUploaderDropzone"] {
-            background-color: #ffffff !important; 
-            border: 1px dashed #aaaaaa !important;
+            /* Dashed border adapts to text color */
+            border: 1px dashed var(--text-color) !important;
         }
-        [data-testid="stFileUploaderDropzone"] div, 
-        [data-testid="stFileUploaderDropzone"] span, 
-        [data-testid="stFileUploaderDropzone"] small {
-            color: #333333 !important;
-        }
-        [data-testid="stFileUploaderDropzone"] button {
-            background-color: #f0f0f0 !important;
-            color: #333333 !important;
-            border: 1px solid #cccccc !important;
-        }
-
-        /* UPLOADED FILE LIST ITEMS */
-        [data-testid="stFileUploader"] section[data-testid="stFileUploaderFileName"] {
-             color: #000000 !important;
-        }
-        div[data-testid="stFileUploader"] div[role="listitem"] {
-            background-color: #ffffff !important;
-            border: 1px solid #e0e0e0 !important;
-        }
-        div[data-testid="stFileUploader"] div[role="listitem"] div {
-            color: #000000 !important;
-            font-weight: 600 !important;
-        }
-
-        /* TYPOGRAPHY */
+        
+        /* --- 7. TYPOGRAPHY --- */
         h1, h2, h3 {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            color: #333 !important;
+            /* Allow color to switch between black/white automatically */
+        }
+        
+        /* Remove strict white/black forcings on inputs so they can turn dark */
+        div[data-baseweb="select"] > div,
+        div[data-baseweb="base-input"] {
+            border: 1px solid #888;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -229,19 +164,19 @@ class BackgroundEngine:
     def process_background(img, mode, custom_color="#FFFFFF"):
         """
         Removes background and replaces it with specified color.
-        img: PIL Image
-        mode: 'Original', 'Transparent', 'White', 'Blue', 'Red', 'Custom'
         """
         if mode == "Original" or not HAS_REMBG:
             return img
         
         # 1. Remove Background (Returns RGBA)
-        # UPDATED: Uses 'u2netp' (lightweight) model to prevent Cloud Crashes
         try:
+            # Use lightweight model if possible
             img_no_bg = rembg_remove(img, model_name="u2netp")
         except Exception:
-            # Fallback if u2netp isn't found for some reason
-            img_no_bg = rembg_remove(img)
+            try:
+                img_no_bg = rembg_remove(img)
+            except Exception:
+                return img # Fallback if everything fails
         
         if mode == "Transparent":
             return img_no_bg
@@ -254,7 +189,6 @@ class BackgroundEngine:
         elif mode == "Red":
             bg_color = (200, 16, 46) # Standard ID Red
         elif mode == "Custom":
-            # Convert hex to RGB
             h = custom_color.lstrip('#')
             bg_color = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
         else:
@@ -262,7 +196,6 @@ class BackgroundEngine:
 
         # 3. Composite Foreground over Background
         new_bg = Image.new("RGBA", img_no_bg.size, bg_color + (255,))
-        # Use the alpha channel of the cutout as the mask
         new_bg.paste(img_no_bg, (0, 0), img_no_bg)
         
         return new_bg.convert("RGB")
@@ -271,17 +204,15 @@ class BackgroundEngine:
 def get_processed_image(file_bytes, brightness, contrast, sharpness, bg_mode, bg_custom):
     """
     Pipeline: Load -> Remove BG -> Enhance
-    Cached to prevent re-running heavy AI models on every click.
     """
-    # 1. Load
     img = load_image_from_bytes(file_bytes)
     if img is None: return None
     
-    # 2. Background Removal (Heavy Task)
+    # Background Removal
     if bg_mode != "Original":
         img = BackgroundEngine.process_background(img, bg_mode, bg_custom)
         
-    # 3. Enhancements
+    # Enhancements
     if brightness != 1.0:
         img = ImageEnhance.Brightness(img).enhance(brightness)
     if contrast != 1.0:
@@ -318,7 +249,7 @@ class IntelligenceEngine:
         return (w // 2, h // 2)
 
 # =============================================================================
-# 7. CROP ENGINE (BIGSAMMY EDITION)
+# 7. CROP ENGINE
 # =============================================================================
 class CropEngine:
     @staticmethod
@@ -343,7 +274,6 @@ class CropEngine:
         target_ratio = target_w / target_h
         current_ratio = img_w / img_h
         
-        # Base Crop Dimensions
         if current_ratio > target_ratio:
             base_crop_h = img_h
             base_crop_w = int(base_crop_h * target_ratio)
@@ -361,8 +291,6 @@ class CropEngine:
                 fx, fy, fw, fh = detected_face
                 face_center_x = fx + (fw // 2)
                 face_center_y = fy + (fh // 2)
-                
-                # BigSammy Logic: 2.3x Face Height
                 ideal_crop_h = int(fh * 2.3)
                 if 100 < ideal_crop_h < img_h:
                     crop_h = min(ideal_crop_h, base_crop_h)
@@ -370,9 +298,7 @@ class CropEngine:
                     if crop_w > img_w:
                         crop_w = img_w
                         crop_h = int(crop_w / target_ratio)
-                
                 center_x = face_center_x
-                # 8% Shift for Headroom
                 shift_amount = int(crop_h * 0.08)
                 center_y = (fy + (fh // 2)) + shift_amount
             else:
@@ -383,7 +309,6 @@ class CropEngine:
         x2 = x1 + crop_w
         y2 = y1 + crop_h
         
-        # Smart Padding
         pad_left = max(0, -x1); pad_top = max(0, -y1)
         pad_right = max(0, x2 - img_w); pad_bottom = max(0, y2 - img_h)
         
@@ -460,7 +385,6 @@ def process_bulk(files, settings, ai_engine):
                 file.seek(0)
                 file_bytes = file.read()
                 
-                # Apply BG Removal & Enhancements
                 img = get_processed_image(
                     file_bytes, 
                     settings['brightness'], settings['contrast'], settings['sharpness'],
