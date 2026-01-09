@@ -50,7 +50,7 @@ def apply_ghanaian_theme():
     """
     st.markdown("""
         <style>
-        /* FORCE LIGHT THEME VARIABLES */
+        /* --- 1. FORCE LIGHT THEME VARIABLES (MISSING IN YOUR CODE) --- */
         :root {
             --primary-color: #CE1126;
             --background-color: #FFFFFF;
@@ -59,7 +59,13 @@ def apply_ghanaian_theme():
             --font: sans-serif;
         }
 
-        /* MAIN THEME COLORS */
+        /* --- 2. FORCE MAIN BACKGROUND TO WHITE --- */
+        .stApp {
+            background-color: white;
+            color: #222222;
+        }
+
+        /* --- 3. GHANAIAN PALETTE --- */
         :root {
             --gh-red: #CE1126;
             --gh-gold: #FCD116;
@@ -68,12 +74,6 @@ def apply_ghanaian_theme():
             --bg-light: #F9F9F9;
         }
         
-        /* FORCE MAIN BACKGROUND TO WHITE */
-        .stApp {
-            background-color: white;
-            color: #222222;
-        }
-
         /* HEADER BORDER */
         header[data-testid="stHeader"] {
             border-bottom: 5px solid var(--gh-gold);
@@ -110,7 +110,7 @@ def apply_ghanaian_theme():
             border-right: 1px solid #ddd;
         }
 
-        /* FORCE DARK TEXT IN SIDEBAR - SPECIFIC SELECTORS */
+        /* FORCE DARK TEXT IN SIDEBAR - ROBUST SELECTORS */
         section[data-testid="stSidebar"] .stMarkdown p,
         section[data-testid="stSidebar"] .stMarkdown h1,
         section[data-testid="stSidebar"] .stMarkdown h2,
@@ -126,7 +126,6 @@ def apply_ghanaian_theme():
             background-color: #ffffff !important; 
             border: 1px dashed #aaaaaa !important;
         }
-        /* Fix generic selector bug */
         [data-testid="stFileUploaderDropzone"] div, 
         [data-testid="stFileUploaderDropzone"] span, 
         [data-testid="stFileUploaderDropzone"] small {
@@ -200,7 +199,7 @@ def cv2_to_pil(cv_image):
     return Image.fromarray(cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB))
 
 # =============================================================================
-# 5. BACKGROUND ENGINE (NEW)
+# 5. BACKGROUND ENGINE (CLOUD SAFE MODE)
 # =============================================================================
 class BackgroundEngine:
     @staticmethod
@@ -214,7 +213,12 @@ class BackgroundEngine:
             return img
         
         # 1. Remove Background (Returns RGBA)
-        img_no_bg = rembg_remove(img)
+        # UPDATED: Uses 'u2netp' (lightweight) model to prevent Cloud Crashes
+        try:
+            img_no_bg = rembg_remove(img, model_name="u2netp")
+        except Exception:
+            # Fallback if u2netp isn't found for some reason
+            img_no_bg = rembg_remove(img)
         
         if mode == "Transparent":
             return img_no_bg
