@@ -50,6 +50,15 @@ def apply_ghanaian_theme():
     """
     st.markdown("""
         <style>
+        /* FORCE LIGHT THEME VARIABLES */
+        :root {
+            --primary-color: #CE1126;
+            --background-color: #FFFFFF;
+            --secondary-background-color: #F0F2F6;
+            --text-color: #222222;
+            --font: sans-serif;
+        }
+
         /* MAIN THEME COLORS */
         :root {
             --gh-red: #CE1126;
@@ -59,9 +68,16 @@ def apply_ghanaian_theme():
             --bg-light: #F9F9F9;
         }
         
+        /* FORCE MAIN BACKGROUND TO WHITE */
+        .stApp {
+            background-color: white;
+            color: #222222;
+        }
+
         /* HEADER BORDER */
         header[data-testid="stHeader"] {
             border-bottom: 5px solid var(--gh-gold);
+            background-color: white !important;
         }
         
         /* ACCENT LINES */
@@ -76,7 +92,7 @@ def apply_ghanaian_theme():
         /* BUTTONS */
         div.stButton > button {
             background-color: var(--gh-black);
-            color: white;
+            color: white !important;
             border-radius: 6px;
             border: none;
             padding: 0.5rem 1rem;
@@ -84,25 +100,24 @@ def apply_ghanaian_theme():
         }
         div.stButton > button:hover {
             background-color: var(--gh-green);
-            color: white;
+            color: white !important;
             border: 1px solid var(--gh-gold);
         }
 
         /* SIDEBAR CONTAINER */
         section[data-testid="stSidebar"] {
-            background-color: #f0f2f6;
+            background-color: #f0f2f6 !important;
             border-right: 1px solid #ddd;
         }
 
-        /* FORCE DARK TEXT IN SIDEBAR - ROBUST SELECTORS */
-        section[data-testid="stSidebar"] h1,
-        section[data-testid="stSidebar"] h2,
-        section[data-testid="stSidebar"] h3,
-        section[data-testid="stSidebar"] h4,
+        /* FORCE DARK TEXT IN SIDEBAR - SPECIFIC SELECTORS */
+        section[data-testid="stSidebar"] .stMarkdown p,
+        section[data-testid="stSidebar"] .stMarkdown h1,
+        section[data-testid="stSidebar"] .stMarkdown h2,
+        section[data-testid="stSidebar"] .stMarkdown h3,
         section[data-testid="stSidebar"] label,
         section[data-testid="stSidebar"] span,
-        section[data-testid="stSidebar"] p,
-        section[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] p {
+        section[data-testid="stSidebar"] div {
             color: #222222 !important;
         }
 
@@ -111,6 +126,7 @@ def apply_ghanaian_theme():
             background-color: #ffffff !important; 
             border: 1px dashed #aaaaaa !important;
         }
+        /* Fix generic selector bug */
         [data-testid="stFileUploaderDropzone"] div, 
         [data-testid="stFileUploaderDropzone"] span, 
         [data-testid="stFileUploaderDropzone"] small {
@@ -123,26 +139,28 @@ def apply_ghanaian_theme():
         }
 
         /* UPLOADED FILE LIST ITEMS - FIXED VISIBILITY */
-        [data-testid="stFileUploader"] div[role="listitem"] {
+        [data-testid="stFileUploader"] section[data-testid="stFileUploaderFileName"] {
+             color: #000000 !important;
+        }
+        div[data-testid="stFileUploader"] div[role="listitem"] {
             background-color: #ffffff !important;
             border: 1px solid #e0e0e0 !important;
         }
-        [data-testid="stFileUploader"] div[role="listitem"] div,
-        [data-testid="stFileUploader"] div[role="listitem"] span {
+        div[data-testid="stFileUploader"] div[role="listitem"] div {
             color: #000000 !important;
-            font-weight: 500 !important;
+            font-weight: 600 !important;
         }
-        [data-testid="stFileUploader"] div[role="listitem"] small {
-            color: #555555 !important;
-        }
-        [data-testid="stFileUploader"] div[role="listitem"] button {
-            color: var(--gh-red) !important;
+        
+        /* EXPANDER TEXT */
+        .streamlit-expanderHeader {
+            color: #222222 !important;
+            font-weight: 600;
         }
 
         /* TYPOGRAPHY */
         h1, h2, h3 {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            color: #333;
+            color: #333 !important;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -163,7 +181,7 @@ PRESETS = {
 }
 
 # =============================================================================
-# 4. UTILITY FUNCTIONS
+# 4. UTILITY FUNCTIONS (CACHED FOR STABILITY)
 # =============================================================================
 @st.cache_data
 def load_image_from_bytes(file_bytes):
@@ -556,7 +574,7 @@ def main():
                     aspect_ratio=(target_w, target_h), should_resize_image=True,
                     key="manual_cropper"
                 )
-                if st.button("✅ Apply Crop & Process"):
+                if st.button("✅ Apply Crop & Process", width="stretch"):
                     final_crop = cropped_preview.resize((target_w, target_h), Image.Resampling.LANCZOS)
                     st.session_state.confirmed_crop_img = final_crop
             else:
@@ -570,10 +588,10 @@ def main():
                             img_to_process, target_w, target_h, ai_engine, use_ai, debug_mode
                         )
                         st.session_state.confirmed_crop_img = processed_img
-                        if debug_mode and debug_img: st.image(debug_img, use_container_width=True)
-                        else: st.image(processed_source, use_container_width=True)
+                        if debug_mode and debug_img: st.image(debug_img, width="stretch")
+                        else: st.image(processed_source, width="stretch")
                 else:
-                    st.image(processed_source, use_container_width=True)
+                    st.image(processed_source, width="stretch")
 
         # RIGHT: RESULT
         with col2:
@@ -581,9 +599,9 @@ def main():
             final_image = st.session_state.confirmed_crop_img
             
             if final_image:
-                st.image(final_image, use_container_width=True)
+                st.image(final_image, width="stretch")
                 img_bytes = get_image_download_link(final_image, export_format)
-                st.download_button(f"⬇️ Download Image", img_bytes, f"bigsammy_crop.{export_format.lower()}", f"image/{export_format.lower()}")
+                st.download_button(f"⬇️ Download Image", img_bytes, f"bigsammy_crop.{export_format.lower()}", f"image/{export_format.lower()}", width="stretch")
                 
                 st.markdown("---")
                 st.subheader("🖨️ Print Sheet")
@@ -592,22 +610,22 @@ def main():
                 orient = c2.selectbox("Orientation", ["Portrait", "Landscape"])
                 space = c3.number_input("Space", 5, 50, 10)
                 
-                if st.button("Generate Sheet"):
+                if st.button("Generate Sheet", width="stretch"):
                     sheet, count = generate_passport_sheet(final_image, p_size, orient, space)
                     st.success(f"{count} photos on {p_size}")
-                    st.image(sheet, use_container_width=True)
+                    st.image(sheet, width="stretch")
                     sheet_bytes = get_image_download_link(sheet, "JPG")
-                    st.download_button("⬇️ Download Sheet", sheet_bytes, "print_sheet.jpg", "image/jpeg")
+                    st.download_button("⬇️ Download Sheet", sheet_bytes, "print_sheet.jpg", "image/jpeg", width="stretch")
             else:
                 st.info("Waiting for Apply...")
 
     # --- BULK MODE ---
     else:
         st.subheader(f"📦 Bulk Processing: {len(uploaded_files)} Images")
-        if st.button("🚀 Start Bulk Process"):
+        if st.button("🚀 Start Bulk Process", width="stretch", type="primary"):
             with st.spinner("Processing (this may take time with BG removal)..."):
                 zip_bytes = process_bulk(uploaded_files, settings, ai_engine)
-                st.download_button("⬇️ Download ZIP", zip_bytes, "bulk_crop.zip", "application/zip")
+                st.download_button("⬇️ Download ZIP", zip_bytes, "bulk_crop.zip", "application/zip", width="stretch")
 
 if __name__ == "__main__":
     main()
