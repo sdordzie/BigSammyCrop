@@ -62,7 +62,6 @@ def apply_ghanaian_theme():
         /* --- 2. ADAPTIVE HEADER --- */
         header[data-testid="stHeader"] {
             border-bottom: 5px solid var(--gh-gold);
-            /* Background adapts automatically to theme */
         }
         
         /* --- 3. ACCENT LINES --- */
@@ -94,8 +93,7 @@ def apply_ghanaian_theme():
             border-right: 1px solid var(--gh-gold);
         }
         
-        /* Ensure sidebar text uses the theme's text color (var(--text-color)) 
-           instead of forcing black, so it works in Dark Mode too. */
+        /* Ensure sidebar text uses the theme's text color so it works in Dark Mode too. */
         section[data-testid="stSidebar"] .stMarkdown h1,
         section[data-testid="stSidebar"] .stMarkdown h2,
         section[data-testid="stSidebar"] .stMarkdown h3 {
@@ -104,17 +102,15 @@ def apply_ghanaian_theme():
 
         /* --- 6. FILE UPLOADER (ADAPTIVE) --- */
         [data-testid="stFileUploaderDropzone"] {
-            /* Dashed border adapts to text color */
             border: 1px dashed var(--text-color) !important;
         }
         
         /* --- 7. TYPOGRAPHY --- */
         h1, h2, h3 {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            /* Allow color to switch between black/white automatically */
         }
         
-        /* Remove strict white/black forcings on inputs so they can turn dark */
+        /* Allow inputs to adapt to dark/light mode naturally */
         div[data-baseweb="select"] > div,
         div[data-baseweb="base-input"] {
             border: 1px solid #888;
@@ -149,7 +145,6 @@ def load_image_from_bytes(file_bytes):
         return None
 
 def pil_to_cv2(pil_image):
-    # Convert to RGB first to handle RGBA images from rembg
     pil_image = pil_image.convert('RGB')
     return cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
 
@@ -170,13 +165,13 @@ class BackgroundEngine:
         
         # 1. Remove Background (Returns RGBA)
         try:
-            # Use lightweight model if possible
+            # Use lightweight model to prevent cloud crashes
             img_no_bg = rembg_remove(img, model_name="u2netp")
         except Exception:
             try:
                 img_no_bg = rembg_remove(img)
             except Exception:
-                return img # Fallback if everything fails
+                return img # Fallback
         
         if mode == "Transparent":
             return img_no_bg
@@ -185,9 +180,9 @@ class BackgroundEngine:
         if mode == "White":
             bg_color = (255, 255, 255)
         elif mode == "Blue":
-            bg_color = (0, 120, 215) # Standard ID Blue
+            bg_color = (0, 120, 215) 
         elif mode == "Red":
-            bg_color = (200, 16, 46) # Standard ID Red
+            bg_color = (200, 16, 46) 
         elif mode == "Custom":
             h = custom_color.lstrip('#')
             bg_color = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
@@ -202,17 +197,12 @@ class BackgroundEngine:
 
 @st.cache_data
 def get_processed_image(file_bytes, brightness, contrast, sharpness, bg_mode, bg_custom):
-    """
-    Pipeline: Load -> Remove BG -> Enhance
-    """
     img = load_image_from_bytes(file_bytes)
     if img is None: return None
     
-    # Background Removal
     if bg_mode != "Original":
         img = BackgroundEngine.process_background(img, bg_mode, bg_custom)
         
-    # Enhancements
     if brightness != 1.0:
         img = ImageEnhance.Brightness(img).enhance(brightness)
     if contrast != 1.0:
@@ -289,8 +279,6 @@ class CropEngine:
             detected_face = ai_engine.detect_face_rect(cv_img)
             if detected_face is not None:
                 fx, fy, fw, fh = detected_face
-                face_center_x = fx + (fw // 2)
-                face_center_y = fy + (fh // 2)
                 ideal_crop_h = int(fh * 2.3)
                 if 100 < ideal_crop_h < img_h:
                     crop_h = min(ideal_crop_h, base_crop_h)
@@ -298,7 +286,7 @@ class CropEngine:
                     if crop_w > img_w:
                         crop_w = img_w
                         crop_h = int(crop_w / target_ratio)
-                center_x = face_center_x
+                center_x = fx + (fw // 2)
                 shift_amount = int(crop_h * 0.08)
                 center_y = (fy + (fh // 2)) + shift_amount
             else:
@@ -479,6 +467,10 @@ def main():
     export_format = st.sidebar.selectbox("Export Format", ["JPG", "PNG", "WEBP", "PDF"])
     
     st.sidebar.markdown("---")
+    st.sidebar.subheader("👨‍💻 Developer Contact")
+    st.sidebar.markdown("**Samuel Kwame Dordzie**")
+    st.sidebar.markdown("📧 bigsammy86g@gmail.com")
+    st.sidebar.markdown("📱 WhatsApp: 0246652528")
     st.sidebar.caption("© 2026 BigSammy Graphics Consult")
 
     if not uploaded_files:
