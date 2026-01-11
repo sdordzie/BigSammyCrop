@@ -17,6 +17,7 @@ from PIL import Image, ImageOps, ImageDraw, ImageEnhance
 import io
 import zipfile
 import os
+import gc
 from datetime import datetime
 
 # --- TRY IMPORTING STREAMLIT-CROPPER ---
@@ -73,7 +74,7 @@ def apply_ghanaian_theme():
             border-radius: 2px;
         }
 
-        /* --- 4. BUTTONS (ALWAYS BLACK BG, WHITE TEXT) --- */
+        /* --- 4. BUTTONS --- */
         div.stButton > button {
             background-color: var(--gh-black);
             color: white !important;
@@ -93,7 +94,6 @@ def apply_ghanaian_theme():
             border-right: 1px solid var(--gh-gold);
         }
         
-        /* Ensure sidebar text uses the theme's text color so it works in Dark Mode too. */
         section[data-testid="stSidebar"] .stMarkdown h1,
         section[data-testid="stSidebar"] .stMarkdown h2,
         section[data-testid="stSidebar"] .stMarkdown h3 {
@@ -110,7 +110,6 @@ def apply_ghanaian_theme():
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
         }
         
-        /* Allow inputs to adapt to dark/light mode naturally */
         div[data-baseweb="select"] > div,
         div[data-baseweb="base-input"] {
             border: 1px solid #888;
@@ -157,39 +156,29 @@ def cv2_to_pil(cv_image):
 class BackgroundEngine:
     @staticmethod
     def process_background(img, mode, custom_color="#FFFFFF"):
-        """
-        Removes background and replaces it with specified color.
-        """
         if mode == "Original" or not HAS_REMBG:
             return img
         
-        # 1. Remove Background (Returns RGBA)
         try:
-            # Use lightweight model to prevent cloud crashes
             img_no_bg = rembg_remove(img, model_name="u2netp")
         except Exception:
             try:
                 img_no_bg = rembg_remove(img)
             except Exception:
-                return img # Fallback
+                return img
         
         if mode == "Transparent":
             return img_no_bg
         
-        # 2. Prepare Background Color
-        if mode == "White":
-            bg_color = (255, 255, 255)
-        elif mode == "Blue":
-            bg_color = (0, 120, 215) 
-        elif mode == "Red":
-            bg_color = (200, 16, 46) 
+        if mode == "White": bg_color = (255, 255, 255)
+        elif mode == "Blue": bg_color = (0, 120, 215) 
+        elif mode == "Red": bg_color = (200, 16, 46) 
         elif mode == "Custom":
             h = custom_color.lstrip('#')
             bg_color = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
         else:
             return img_no_bg
 
-        # 3. Composite Foreground over Background
         new_bg = Image.new("RGBA", img_no_bg.size, bg_color + (255,))
         new_bg.paste(img_no_bg, (0, 0), img_no_bg)
         
@@ -213,7 +202,7 @@ def get_processed_image(file_bytes, brightness, contrast, sharpness, bg_mode, bg
     return img
 
 # =============================================================================
-# 6. AI INTELLIGENCE ENGINE
+# 6. AI INTELLIGENCE ENGINE (UPDATED FOR SENSITIVITY)
 # =============================================================================
 class IntelligenceEngine:
     def __init__(self):
@@ -223,7 +212,7 @@ class IntelligenceEngine:
     def detect_face_rect(self, cv_img):
         gray = cv2.cvtColor(cv_img, cv2.COLOR_BGR2GRAY)
         faces = self.face_cascade.detectMultiScale(
-            gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30)
+            gray, scaleFactor=1.05, minNeighbors=4, minSize=(30, 30)
         )
         if len(faces) == 0: return None
         return max(faces, key=lambda r: r[2] * r[3])
@@ -239,7 +228,7 @@ class IntelligenceEngine:
         return (w // 2, h // 2)
 
 # =============================================================================
-# 7. CROP ENGINE
+# 7. CROP ENGINE (UPDATED WITH SAFE FALLBACK)
 # =============================================================================
 class CropEngine:
     @staticmethod
@@ -271,13 +260,14 @@ class CropEngine:
             base_crop_w = img_w
             base_crop_h = int(base_crop_w / target_ratio)
             
-        center_x, center_y = img_w // 2, img_h // 2
         detected_face = None
         crop_w, crop_h = base_crop_w, base_crop_h
         
         if use_ai:
             detected_face = ai_engine.detect_face_rect(cv_img)
+            
             if detected_face is not None:
+                # --- CASE 1: FACE FOUND ---
                 fx, fy, fw, fh = detected_face
                 ideal_crop_h = int(fh * 2.3)
                 if 100 < ideal_crop_h < img_h:
@@ -290,7 +280,12 @@ class CropEngine:
                 shift_amount = int(crop_h * 0.08)
                 center_y = (fy + (fh // 2)) + shift_amount
             else:
-                center_x, center_y = ai_engine.detect_saliency_center(cv_img)
+                # --- CASE 2: NO FACE FOUND (SAFE FALLBACK) ---
+                center_x = img_w // 2
+                center_y = int(img_h * 0.35) 
+        else:
+            center_x = img_w // 2
+            center_y = img_h // 2
 
         x1 = center_x - (crop_w // 2)
         y1 = center_y - (crop_h // 2)
@@ -394,6 +389,11 @@ def process_bulk(files, settings, ai_engine):
                 
                 fname = f"bigsammy_crop_{i+1:03d}_{file.name.rsplit('.', 1)[0]}.{settings['format'].lower()}"
                 zip_file.writestr(fname, img_byte_arr.getvalue())
+                
+                # Manual GC after every image to keep RAM low
+                del img, processed_img
+                gc.collect()
+                
             except Exception as e:
                 st.error(f"Error: {e}")
         status_text.text("Done!")
@@ -420,10 +420,30 @@ def main():
     
     if 'confirmed_crop_img' not in st.session_state: st.session_state.confirmed_crop_img = None
     if 'last_settings_hash' not in st.session_state: st.session_state.last_settings_hash = ""
+    # Initialize the unique key for the uploader
+    if 'uploader_key' not in st.session_state: st.session_state.uploader_key = 0
 
     # -- Sidebar --
     st.sidebar.header("⚙️ Configuration")
-    uploaded_files = st.sidebar.file_uploader("Upload Images", type=['png', 'jpg', 'jpeg', 'webp', 'bmp', 'tiff'], accept_multiple_files=True)
+    
+    # NEW: RESET BUTTON WITH BROWSER FLUSH
+    if st.sidebar.button("🧹 Start Over (Clear Memory)", type="primary"):
+        # 1. Clear Backend State
+        st.session_state.confirmed_crop_img = None
+        st.session_state.last_settings_hash = ""
+        # 2. Increment Key to FORCE Browser to discard the File Uploader
+        st.session_state.uploader_key += 1
+        # 3. Garbage Collect
+        gc.collect()
+        st.rerun()
+    
+    # Use the dynamic key here
+    uploaded_files = st.sidebar.file_uploader(
+        "Upload Images", 
+        type=['png', 'jpg', 'jpeg', 'webp', 'bmp', 'tiff'], 
+        accept_multiple_files=True,
+        key=f"uploader_{st.session_state.uploader_key}"  # <--- THIS IS THE TRICK
+    )
     
     # 1. CROP
     st.sidebar.subheader("📐 Crop Dimensions")
@@ -436,7 +456,7 @@ def main():
         target_w, target_h = PRESETS[preset_choice]
         st.sidebar.info(f"Target: {target_w} x {target_h}")
 
-    # 2. BACKGROUND LAB (NEW)
+    # 2. BACKGROUND LAB
     with st.sidebar.expander("✂️ Background Lab", expanded=True):
         if HAS_REMBG:
             bg_mode = st.radio("Background Style", ["Original", "White", "Blue", "Red", "Transparent", "Custom"])
@@ -484,7 +504,6 @@ def main():
         'bg_mode': bg_mode, 'bg_custom': bg_custom
     }
     
-    # Hash check to reset confirmed crop if settings change
     current_hash = f"{target_w}-{target_h}-{bg_mode}-{bg_custom}-{brightness}-{contrast}-{uploaded_files[0].name}"
     if st.session_state.last_settings_hash != current_hash:
         st.session_state.confirmed_crop_img = None
@@ -496,7 +515,6 @@ def main():
         f.seek(0)
         file_bytes = f.read()
         
-        # PIPELINE: Load -> BG Remove -> Enhance (CACHED)
         with st.spinner("Processing Background & Enhancements..."):
             processed_source = get_processed_image(
                 file_bytes, brightness, contrast, sharpness, bg_mode, bg_custom
@@ -569,6 +587,9 @@ def main():
             with st.spinner("Processing (this may take time with BG removal)..."):
                 zip_bytes = process_bulk(uploaded_files, settings, ai_engine)
                 st.download_button("⬇️ Download ZIP", zip_bytes, "bulk_crop.zip", "application/zip", width="stretch")
+        
+        # Explicit GC after bulk runs
+        gc.collect()
 
 if __name__ == "__main__":
     main()
