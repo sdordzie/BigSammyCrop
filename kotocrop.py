@@ -211,6 +211,7 @@ class IntelligenceEngine:
 
     def detect_face_rect(self, cv_img):
         gray = cv2.cvtColor(cv_img, cv2.COLOR_BGR2GRAY)
+        # Catch smaller faces in full body shots
         faces = self.face_cascade.detectMultiScale(
             gray, scaleFactor=1.05, minNeighbors=4, minSize=(30, 30)
         )
@@ -384,8 +385,12 @@ def process_bulk(files, settings, ai_engine):
                 img_byte_arr = io.BytesIO()
                 fmt = settings['format'].upper()
                 if fmt == 'JPG': fmt = 'JPEG'
-                if fmt == 'PDF': processed_img.save(img_byte_arr, format='PDF', resolution=100.0)
-                else: processed_img.save(img_byte_arr, format=fmt, quality=95)
+                if fmt == 'PDF': 
+                    processed_img.save(img_byte_arr, format='PDF', resolution=100.0)
+                elif fmt in ['JPEG', 'WEBP']:
+                    processed_img.save(img_byte_arr, format=fmt, quality=95)
+                else: 
+                    processed_img.save(img_byte_arr, format=fmt)
                 
                 fname = f"bigsammy_crop_{i+1:03d}_{file.name.rsplit('.', 1)[0]}.{settings['format'].lower()}"
                 zip_file.writestr(fname, img_byte_arr.getvalue())
@@ -442,7 +447,7 @@ def main():
         "Upload Images", 
         type=['png', 'jpg', 'jpeg', 'webp', 'bmp', 'tiff'], 
         accept_multiple_files=True,
-        key=f"uploader_{st.session_state.uploader_key}"  # <--- THIS IS THE TRICK
+        key=f"uploader_{st.session_state.uploader_key}"
     )
     
     # 1. CROP
@@ -484,7 +489,8 @@ def main():
         manual_crop_mode = st.sidebar.checkbox("🛠️ Manual Crop Mode", value=False)
 
     debug_mode = st.sidebar.checkbox("Show AI Vision", value=False)
-    export_format = st.sidebar.selectbox("Export Format", ["JPG", "PNG", "WEBP", "PDF"])
+    # ADDED TIFF HERE
+    export_format = st.sidebar.selectbox("Export Format", ["JPG", "PNG", "WEBP", "TIFF", "PDF"])
     
     st.sidebar.markdown("---")
     st.sidebar.subheader("👨‍💻 Developer Contact")
