@@ -17,7 +17,7 @@ from PIL import Image, ImageOps, ImageDraw, ImageEnhance
 import io
 import zipfile
 import os
-import gc
+import gc  # Garbage Collector for memory management
 from datetime import datetime
 
 # --- TRY IMPORTING STREAMLIT-CROPPER ---
@@ -43,11 +43,34 @@ st.set_page_config(
 )
 
 # =============================================================================
-# 2. GHANAIAN THEME & BRANDING (ADAPTIVE CSS + STEALTH MODE)
+# 2. UI STYLING & STEALTH MODE
 # =============================================================================
+def hide_streamlit_elements():
+    """
+    Hides the Streamlit hamburger menu, footer, 'Deploy' button, and 'Stop' button.
+    """
+    hide_st_style = """
+        <style>
+        /* 1. Hide the hamburger menu (top right) */
+        #MainMenu {visibility: hidden;}
+        
+        /* 2. Hide the "Made with Streamlit" footer */
+        footer {visibility: hidden;}
+        
+        /* 3. Hide the top header line (colored decoration) */
+        header {visibility: hidden;}
+        
+        /* 4. Hide the "Deploy" and "Stop" buttons */
+        .stDeployButton {display:none;}
+        [data-testid="stStatusWidget"] {visibility: hidden;}
+        </style>
+    """
+    st.markdown(hide_st_style, unsafe_allow_html=True)
+
 def apply_ghanaian_theme():
     """
-    Injects custom CSS to style the app and HIDE developer menus.
+    Injects custom CSS to style the app with Ghanaian colors while respecting
+    the user's Light/Dark mode settings.
     """
     st.markdown("""
         <style>
@@ -59,11 +82,11 @@ def apply_ghanaian_theme():
             --gh-black: #000000;
         }
 
-        /* --- 2. HIDE STREAMLIT MENUS (STEALTH MODE) --- */
-        #MainMenu {visibility: hidden;} /* Hides the 3-dot menu */
-        footer {visibility: hidden;}    /* Hides 'Made with Streamlit' */
-        header {visibility: hidden;}    /* Hides the top decoration bar */
-
+        /* --- 2. ADAPTIVE HEADER --- */
+        header[data-testid="stHeader"] {
+            border-bottom: 5px solid var(--gh-gold);
+        }
+        
         /* --- 3. ACCENT LINES --- */
         .decoration-line {
             height: 4px;
@@ -159,7 +182,7 @@ class BackgroundEngine:
             return img
         
         try:
-            # Use 'u2netp' (lightweight) model to save RAM and prevent crashes
+            # Use 'u2netp' (lightweight) model to prevent cloud crashes
             img_no_bg = rembg_remove(img, model_name="u2netp")
         except Exception:
             try:
@@ -203,7 +226,7 @@ def get_processed_image(file_bytes, brightness, contrast, sharpness, bg_mode, bg
     return img
 
 # =============================================================================
-# 6. AI INTELLIGENCE ENGINE (IMPROVED SENSITIVITY)
+# 6. AI INTELLIGENCE ENGINE (UPDATED FOR SENSITIVITY)
 # =============================================================================
 class IntelligenceEngine:
     def __init__(self):
@@ -220,7 +243,7 @@ class IntelligenceEngine:
         return max(faces, key=lambda r: r[2] * r[3])
 
 # =============================================================================
-# 7. CROP ENGINE (WITH SAFE FALLBACK)
+# 7. CROP ENGINE (UPDATED WITH SAFE FALLBACK)
 # =============================================================================
 class CropEngine:
     @staticmethod
@@ -285,7 +308,6 @@ class CropEngine:
         x2 = x1 + crop_w
         y2 = y1 + crop_h
         
-        # Boundary Checks
         pad_left = max(0, -x1); pad_top = max(0, -y1)
         pad_right = max(0, x2 - img_w); pad_bottom = max(0, y2 - img_h)
         
@@ -410,6 +432,8 @@ def get_image_download_link(img, format_str):
 # =============================================================================
 def main():
     apply_ghanaian_theme()
+    hide_streamlit_elements() # STEALTH MODE ACTIVATED
+    
     ai_engine = IntelligenceEngine()
     
     st.markdown('<div class="decoration-line"></div>', unsafe_allow_html=True)
@@ -418,24 +442,21 @@ def main():
     
     if 'confirmed_crop_img' not in st.session_state: st.session_state.confirmed_crop_img = None
     if 'last_settings_hash' not in st.session_state: st.session_state.last_settings_hash = ""
-    # Initialize the unique key for the uploader
+    # Initialize uploader key for flushing mechanism
     if 'uploader_key' not in st.session_state: st.session_state.uploader_key = 0
 
     # -- Sidebar --
     st.sidebar.header("⚙️ Configuration")
     
-    # NEW: RESET BUTTON WITH BROWSER FLUSH
+    # NEW: RESET BUTTON (Clears RAM & Browser Cache)
     if st.sidebar.button("🧹 Start Over (Clear Memory)", type="primary"):
-        # 1. Clear Backend State
         st.session_state.confirmed_crop_img = None
         st.session_state.last_settings_hash = ""
-        # 2. Increment Key to FORCE Browser to discard the File Uploader
-        st.session_state.uploader_key += 1
-        # 3. Garbage Collect
+        st.session_state.uploader_key += 1 # Forces browser to drop files
         gc.collect()
         st.rerun()
     
-    # Use the dynamic key here
+    # Dynamic File Uploader
     uploaded_files = st.sidebar.file_uploader(
         "Upload Images", 
         type=['png', 'jpg', 'jpeg', 'webp', 'bmp', 'tiff'], 
