@@ -43,12 +43,11 @@ st.set_page_config(
 )
 
 # =============================================================================
-# 2. GHANAIAN THEME & BRANDING (ADAPTIVE CSS)
+# 2. GHANAIAN THEME & BRANDING (ADAPTIVE CSS + STEALTH MODE)
 # =============================================================================
 def apply_ghanaian_theme():
     """
-    Injects custom CSS to style the app with Ghanaian colors while respecting
-    the user's Light/Dark mode settings.
+    Injects custom CSS to style the app and HIDE developer menus.
     """
     st.markdown("""
         <style>
@@ -60,11 +59,11 @@ def apply_ghanaian_theme():
             --gh-black: #000000;
         }
 
-        /* --- 2. ADAPTIVE HEADER --- */
-        header[data-testid="stHeader"] {
-            border-bottom: 5px solid var(--gh-gold);
-        }
-        
+        /* --- 2. HIDE STREAMLIT MENUS (STEALTH MODE) --- */
+        #MainMenu {visibility: hidden;} /* Hides the 3-dot menu */
+        footer {visibility: hidden;}    /* Hides 'Made with Streamlit' */
+        header {visibility: hidden;}    /* Hides the top decoration bar */
+
         /* --- 3. ACCENT LINES --- */
         .decoration-line {
             height: 4px;
@@ -160,9 +159,11 @@ class BackgroundEngine:
             return img
         
         try:
+            # Use 'u2netp' (lightweight) model to save RAM and prevent crashes
             img_no_bg = rembg_remove(img, model_name="u2netp")
         except Exception:
             try:
+                # Fallback to standard if lightweight fails
                 img_no_bg = rembg_remove(img)
             except Exception:
                 return img
@@ -202,7 +203,7 @@ def get_processed_image(file_bytes, brightness, contrast, sharpness, bg_mode, bg
     return img
 
 # =============================================================================
-# 6. AI INTELLIGENCE ENGINE (UPDATED FOR SENSITIVITY)
+# 6. AI INTELLIGENCE ENGINE (IMPROVED SENSITIVITY)
 # =============================================================================
 class IntelligenceEngine:
     def __init__(self):
@@ -211,25 +212,15 @@ class IntelligenceEngine:
 
     def detect_face_rect(self, cv_img):
         gray = cv2.cvtColor(cv_img, cv2.COLOR_BGR2GRAY)
-        # Catch smaller faces in full body shots
+        # Optimized for smaller faces / full body shots
         faces = self.face_cascade.detectMultiScale(
             gray, scaleFactor=1.05, minNeighbors=4, minSize=(30, 30)
         )
         if len(faces) == 0: return None
         return max(faces, key=lambda r: r[2] * r[3])
 
-    def detect_saliency_center(self, cv_img):
-        gray = cv2.cvtColor(cv_img, cv2.COLOR_BGR2GRAY)
-        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-        edges = cv2.Canny(blurred, 50, 150)
-        M = cv2.moments(edges)
-        if M["m00"] != 0:
-            return (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
-        h, w = cv_img.shape[:2]
-        return (w // 2, h // 2)
-
 # =============================================================================
-# 7. CROP ENGINE (UPDATED WITH SAFE FALLBACK)
+# 7. CROP ENGINE (WITH SAFE FALLBACK)
 # =============================================================================
 class CropEngine:
     @staticmethod
@@ -282,6 +273,7 @@ class CropEngine:
                 center_y = (fy + (fh // 2)) + shift_amount
             else:
                 # --- CASE 2: NO FACE FOUND (SAFE FALLBACK) ---
+                # Fixes the issue where it crops shoes. Defaults to upper body.
                 center_x = img_w // 2
                 center_y = int(img_h * 0.35) 
         else:
@@ -293,6 +285,7 @@ class CropEngine:
         x2 = x1 + crop_w
         y2 = y1 + crop_h
         
+        # Boundary Checks
         pad_left = max(0, -x1); pad_top = max(0, -y1)
         pad_right = max(0, x2 - img_w); pad_bottom = max(0, y2 - img_h)
         
@@ -387,7 +380,7 @@ def process_bulk(files, settings, ai_engine):
                 if fmt == 'JPG': fmt = 'JPEG'
                 if fmt == 'PDF': 
                     processed_img.save(img_byte_arr, format='PDF', resolution=100.0)
-                elif fmt in ['JPEG', 'WEBP']:
+                elif fmt in ['JPEG', 'WEBP', 'TIFF']:
                     processed_img.save(img_byte_arr, format=fmt, quality=95)
                 else: 
                     processed_img.save(img_byte_arr, format=fmt)
@@ -395,7 +388,7 @@ def process_bulk(files, settings, ai_engine):
                 fname = f"bigsammy_crop_{i+1:03d}_{file.name.rsplit('.', 1)[0]}.{settings['format'].lower()}"
                 zip_file.writestr(fname, img_byte_arr.getvalue())
                 
-                # Manual GC after every image to keep RAM low
+                # Explicit Garbage Collection
                 del img, processed_img
                 gc.collect()
                 
@@ -489,7 +482,7 @@ def main():
         manual_crop_mode = st.sidebar.checkbox("🛠️ Manual Crop Mode", value=False)
 
     debug_mode = st.sidebar.checkbox("Show AI Vision", value=False)
-    # ADDED TIFF HERE
+    # TIFF Added
     export_format = st.sidebar.selectbox("Export Format", ["JPG", "PNG", "WEBP", "TIFF", "PDF"])
     
     st.sidebar.markdown("---")
