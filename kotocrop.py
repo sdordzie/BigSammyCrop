@@ -43,26 +43,33 @@ st.set_page_config(
 )
 
 # =============================================================================
-# 2. UI STYLING & STEALTH MODE
+# 2. UI STYLING & STEALTH MODE (NUCLEAR FIX)
 # =============================================================================
 def hide_streamlit_elements():
     """
-    Hides the Streamlit hamburger menu, footer, 'Deploy' button, and 'Stop' button.
+    Hides the Streamlit hamburger menu, footer, header, and the floating bottom-right toolbar.
     """
     hide_st_style = """
         <style>
-        /* 1. Hide the hamburger menu (top right) */
-        #MainMenu {visibility: hidden;}
+        /* 1. FORCE HIDE the top header bar */
+        header {visibility: hidden !important; display: none !important;}
+        [data-testid="stHeader"] {visibility: hidden !important; display: none !important;}
         
-        /* 2. Hide the "Made with Streamlit" footer */
-        footer {visibility: hidden;}
+        /* 2. FORCE HIDE the Toolbar (The Red/Purple buttons in bottom-right) */
+        [data-testid="stToolbar"] {visibility: hidden !important; display: none !important;}
         
-        /* 3. Hide the top header line (colored decoration) */
-        header {visibility: hidden;}
+        /* 3. Hide the footer */
+        footer {visibility: hidden !important; display: none !important;}
+        [data-testid="stFooter"] {visibility: hidden !important; display: none !important;}
         
-        /* 4. Hide the "Deploy" and "Stop" buttons */
-        .stDeployButton {display:none;}
-        [data-testid="stStatusWidget"] {visibility: hidden;}
+        /* 4. Hide the colored decoration line at the very top */
+        [data-testid="stDecoration"] {visibility: hidden !important; display: none !important;}
+        
+        /* 5. Hide the 'Stop' warning/status widget */
+        [data-testid="stStatusWidget"] {visibility: hidden !important; display: none !important;}
+        
+        /* 6. Extra safety: Hide the "Viewer Badge" if it appears separately */
+        .viewerBadge_container__1QSob {display: none !important;}
         </style>
     """
     st.markdown(hide_st_style, unsafe_allow_html=True)
@@ -432,7 +439,7 @@ def get_image_download_link(img, format_str):
 # =============================================================================
 def main():
     apply_ghanaian_theme()
-    hide_streamlit_elements() # STEALTH MODE ACTIVATED
+    hide_streamlit_elements() # NUCLEAR STEALTH MODE
     
     ai_engine = IntelligenceEngine()
     
